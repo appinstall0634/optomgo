@@ -2,8 +2,6 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const path = require('path');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,34 +16,24 @@ const ADMIN_USER = {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// Для Vercel - правильная настройка статических файлов
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'public')));
-} else {
-    app.use(express.static('public'));
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || 'optomgo-jwt-secret-change-in-production';
-
-// Middleware для проверки авторизации через JWT
-const requireAuth = (req, res, next) => {
-    const token = req.cookies.authToken;
-    
-    if (!token) {
-        return res.redirect('/login');
+// Конфигурация сессий
+app.use(session({
+    secret: 'optomgo-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // true для HTTPS
+        maxAge: 24 * 60 * 60 * 1000 // 24 часа
     }
-    
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
+}));
+
+// Middleware для проверки авторизации
+const requireAuth = (req, res, next) => {
+    if (req.session && req.session.isAuthenticated) {
         return next();
-    } catch (error) {
+    } else {
         return res.redirect('/login');
     }
 };
@@ -57,32 +45,10 @@ app.get('/', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Добавляем обработчик для корневого пути без авторизации
-app.get('/check-auth', (req, res) => {
-    const token = req.cookies.authToken;
-    
-    if (!token) {
-        return res.redirect('/login');
-    }
-    
-    try {
-        jwt.verify(token, JWT_SECRET);
-        return res.redirect('/');
-    } catch (error) {
-        return res.redirect('/login');
-    }
-});
-
 // Страница логина
 app.get('/login', (req, res) => {
-    const token = req.cookies.authToken;
-    if (token) {
-        try {
-            jwt.verify(token, JWT_SECRET);
-            return res.redirect('/');
-        } catch (error) {
-            // Токен недействителен, продолжаем к логину
-        }
+    if (req.session && req.session.isAuthenticated) {
+        return res.redirect('/');
     }
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
@@ -102,7 +68,7 @@ app.post('/login', async (req, res) => {
                 req.session.isAuthenticated = true;
                 req.session.username = username;
                 console.log('Login successful (plain text)');
-                return res.json({ success: true, message: 'Успешный вход!' });
+                return res.json({ success: true, message: 'Successful login!' });
             }
             
             const isValidPassword = await bcrypt.compare(password, ADMIN_USER.password);
@@ -112,41 +78,34 @@ app.post('/login', async (req, res) => {
                 req.session.isAuthenticated = true;
                 req.session.username = username;
                 console.log('Login successful');
-                return res.json({ success: true, message: 'Успешный вход!' });
+                return res.json({ success: true, message: 'Successful login!' });
             }
         }
         
         console.log('Login failed');
-        return res.status(401).json({ success: false, message: 'Неверные учетные данные!' });
+        return res.status(401).json({ success: false, message: 'Incorrect credentials!' });
     } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ success: false, message: 'Ошибка сервера!' });
+        return res.status(500).json({ success: false, message: 'Server error!' });
     }
 });
 
 // Выход
 app.post('/logout', (req, res) => {
-    res.clearCookie('authToken');
-    res.json({ success: true, message: 'Успешный выход!' });
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Error exiting!' });
+        }
+        res.json({ success: true, message: 'Successful exit!' });
+    });
 });
 
 // API для проверки статуса авторизации
 app.get('/api/auth-status', (req, res) => {
-    const token = req.cookies.authToken;
-    
-    if (!token) {
-        return res.json({ isAuthenticated: false, username: null });
-    }
-    
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        res.json({
-            isAuthenticated: true,
-            username: decoded.username
-        });
-    } catch (error) {
-        res.json({ isAuthenticated: false, username: null });
-    }
+    res.json({
+        isAuthenticated: req.session && req.session.isAuthenticated,
+        username: req.session ? req.session.username : null
+    });
 });
 
 // Защита всех остальных маршрутов
@@ -155,9 +114,6 @@ app.use('/api/*', requireAuth);
 // Запуск сервера
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
-    console.log(`📝 Логин: ${ADMIN_USER.username}`);
-    console.log(`🔑 Пароль: password123`);
-    console.log(`🔒 Для смены пароля используйте: node hashPassword.js`);
 });
 
 // Graceful shutdown
