@@ -35,13 +35,22 @@ document.addEventListener('DOMContentLoaded', function() {
 async function checkAuthStatus() {
     try {
         const response = await fetch('/api/auth-status');
-        const data = await response.json();
         
-        if (!data.isAuthenticated) {
+        if (!response.ok) {
+            console.log('Auth check failed, redirecting to login');
             window.location.href = '/login';
             return;
         }
         
+        const data = await response.json();
+        
+        if (!data.isAuthenticated) {
+            console.log('Not authenticated, redirecting to login');
+            window.location.href = '/login';
+            return;
+        }
+        
+        console.log('User authenticated:', data.username);
         // Если авторизован, инициализируем Firebase
         initializeFirebaseConnection();
     } catch (error) {
@@ -52,27 +61,45 @@ async function checkAuthStatus() {
 
 function initializeFirebaseConnection() {
     try {
+        console.log('Initializing Firebase...');
         app = initializeApp(firebaseConfig);
         database = getDatabase(app);
         initializeFirebaseApp();
     } catch (error) {
-        showError("Firebase configuration error. Please check your config.");
         console.error("Firebase error:", error);
+        showError("Firebase configuration error. Please check your config.");
+        
+        // Показываем кнопки даже если Firebase не работает
+        controlsEl.style.display = 'block';
+        statusEl.innerHTML = '❌ Firebase connection failed';
+        statusEl.className = 'status error';
     }
 }
 
 function initializeFirebaseApp() {
+    console.log('Setting up Firebase listeners...');
+    
     // Listen to button visibility changes
     const buttonVisibilityRef = ref(database, 'isButtonVisible');
 
     onValue(buttonVisibilityRef, (snapshot) => {
+        console.log('Firebase data received:', snapshot.val());
         const isVisible = snapshot.val() || false;
         currentStatus = isVisible;
         updateStatus(isVisible);
         controlsEl.style.display = 'block';
     }, (error) => {
-        showError("Failed to connect to server. Check your connection.");
-        console.error("Connection read error:", error);
+        console.error("Firebase read error:", error);
+        showError("Failed to connect to Firebase. Check your connection.");
+        
+        // Показываем кнопки даже при ошибке
+        controlsEl.style.display = 'block';
+        statusEl.innerHTML = '⚠️ Firebase connection issues';
+        statusEl.className = 'status warning';
+        
+        // Активируем кнопки с предупреждением
+        showBtn.disabled = false;
+        hideBtn.disabled = false;
     });
 
     // Add button event listeners
