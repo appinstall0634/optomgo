@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptomGo Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+    <h1>🎛️ OptomGo Control</h1>
+    <p class="subtitle">App Control Panel</p>
+
+    <div id="status" class="status loading">
+        <div class="loading-spinner"></div>
+        Connecting to server...
+    </div>
+
+    <div id="controls" style="display: none;">
+        <button id="showBtn" class="control-button show-btn">
+            ✅ Show Button
+        </button>
+        <button id="hideBtn" class="control-button hide-btn">
+            ❌ Hide Button
+        </button>
+    </div>
+
+    <div id="message"></div>
+
+    <div class="config-info">
+        <strong>Instructions:</strong><br>
+        1. Use this panel to control app features remotely<br>
+        2. Changes will be reflected in the mobile app instantly<br>
+        3. Toggle button visibility for the OptomGo application
+    </div>
+
+    <div class="user-controls">
+        <button id="logoutBtn" class="logout-btn">
+            🚪 Logout
+        </button>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
