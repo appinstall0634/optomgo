@@ -16,21 +16,15 @@ const ADMIN_USER = {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Для Vercel - правильная настройка статических файлов
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'public')));
-} else {
-    app.use(express.static('public'));
-}
+app.use(express.static('public'));
 
 // Конфигурация сессий
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'optomgo-secret-key-change-in-production',
+    secret: 'optomgo-secret-key-change-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // true для HTTPS в production
+        secure: false, // true для HTTPS
         maxAge: 24 * 60 * 60 * 1000 // 24 часа
     }
 }));
@@ -74,7 +68,7 @@ app.post('/login', async (req, res) => {
                 req.session.isAuthenticated = true;
                 req.session.username = username;
                 console.log('Login successful (plain text)');
-                return res.json({ success: true, message: 'Успешный вход!' });
+                return res.json({ success: true, message: 'Successful login!' });
             }
             
             const isValidPassword = await bcrypt.compare(password, ADMIN_USER.password);
@@ -84,15 +78,15 @@ app.post('/login', async (req, res) => {
                 req.session.isAuthenticated = true;
                 req.session.username = username;
                 console.log('Login successful');
-                return res.json({ success: true, message: 'Успешный вход!' });
+                return res.json({ success: true, message: 'Successful login!' });
             }
         }
         
         console.log('Login failed');
-        return res.status(401).json({ success: false, message: 'Неверные учетные данные!' });
+        return res.status(401).json({ success: false, message: 'Incorrect credentials!' });
     } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ success: false, message: 'Ошибка сервера!' });
+        return res.status(500).json({ success: false, message: 'Server error!' });
     }
 });
 
@@ -100,9 +94,9 @@ app.post('/login', async (req, res) => {
 app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ success: false, message: 'Ошибка при выходе!' });
+            return res.status(500).json({ success: false, message: 'Error exiting!' });
         }
-        res.json({ success: true, message: 'Успешный выход!' });
+        res.json({ success: true, message: 'Successful exit!' });
     });
 });
 
@@ -120,9 +114,6 @@ app.use('/api/*', requireAuth);
 // Запуск сервера
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
-    console.log(`📝 Логин: ${ADMIN_USER.username}`);
-    console.log(`🔑 Пароль: password123`);
-    console.log(`🔒 Для смены пароля используйте: node hashPassword.js`);
 });
 
 // Graceful shutdown
