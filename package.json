@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "OptomGo Control Panel with Authentication",
   "main": "server.js",
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server",
     "dev": "nodemon server.js",
     "build": "echo 'No build step required'",
     "vercel-build": "echo 'No build step required'"
@@ -13,9 +16,7 @@
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "bcryptjs": "^2.4.3",
-    "path": "^0.12.7",
-    "jsonwebtoken": "^9.0.2",
-    "cookie-parser": "^1.4.6"
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
