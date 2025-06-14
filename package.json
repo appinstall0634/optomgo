@@ -4,7 +4,7 @@
   "description": "OptomGo Control Panel with Authentication",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server",
     "dev": "nodemon server.js",
     "build": "echo 'No build step required'",
     "vercel-build": "echo 'No build step required'"
