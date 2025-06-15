@@ -1,10 +1,10 @@
 const express = require('express');
 const session = require('express-session');
-const bcrypt = require('bcryptjs');
 const path = require('path');
 const cors = require('cors');
-
 const app = express();
+const bcrypt = require('bcryptjs');
+const expressEjsLayouts = require('express-ejs-layouts');
 const PORT = process.env.PORT || 3000;
 
 // Конфигурация пользователя (в реальном проекте лучше использовать базу данных)
@@ -18,6 +18,11 @@ const ADMIN_USER = {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+app.use(expressEjsLayouts);
+
+app.set('layout extractScripts', true);
+app.set('layout extractStyles', true);
 
 app.use(cors({
   origin: [""],
